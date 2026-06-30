@@ -1,0 +1,62 @@
+ReadyBase
+Copyright (c) Day Two AI. All rights reserved.
+
+ReadyBase is distributed as a binary (Early Access), provided as-is with no
+warranty. "Claude" and "Anthropic" are trademarks of Anthropic, used only to
+describe interoperability. Day Two AI is an Anthropic partner; ReadyBase is
+built independently, with no Anthropic participation or endorsement.
+
+ReadyBase is local-first. It reads the repository on disk and sends no source
+code anywhere.
+
+================================================================================
+Ideas distilled into native Go (clean-room, NO source code used)
+================================================================================
+
+The following projects and research inspired ideas that were re-authored from
+scratch in Go. No source code from them is included in or distributed with
+ReadyBase. These are courtesy credits, not license obligations:
+
+  - dependency-cruiser   (MIT)          https://github.com/sverweij/dependency-cruiser
+        static dependency graph with rules written against it
+  - madge                (MIT)          https://github.com/pahen/madge
+        module dependency graph and circular-dependency detection
+  - CodeScene / "Your Code as a Crime Scene", Adam Tornhill   (proprietary, book)
+        behavioral code analysis: hotspots, change coupling, knowledge maps
+  - Truck Factor research, Avelino/Passos/Hora/Valente, 2016  (research)
+        estimating bus / truck factor from version-control authorship
+  - GitHub CODEOWNERS    (convention)   https://docs.github.com/articles/about-code-owners
+        mapping paths to the people and teams who own them
+  - SonarQube            (LGPL-3.0)     https://github.com/SonarSource/sonarqube
+        a composite quality gate over many independent signals
+  - agents.md / Claude Code  (convention / platform)  https://agents.md
+        project context files an agent reads (AGENTS.md, CLAUDE.md)
+
+================================================================================
+Third-party Go libraries compiled into the readybase binary
+================================================================================
+
+These are linked into the released binary and distributed with it:
+
+  github.com/odvcencio/gotreesitter   (MIT)          pure-Go incremental parser,
+        implementing the tree-sitter idea (https://github.com/tree-sitter/tree-sitter, MIT)
+  modernc.org/sqlite                  (BSD-3-Clause)  embedded scan/history/console database
+  github.com/google/uuid              (BSD-3-Clause)  identifiers for scans and records
+
+The complete set of third-party Go modules compiled into the binary (11 modules,
+resolved from `go list -deps ./cmd/readybase`) and their licenses is listed in
+THIRD_PARTY_LICENSES.md. The full, verbatim text of each license is reproduced
+in the LICENSES/ directory, including the golang.org/x/sys PATENTS grant and the
+modernc.org/libc upstream third-party C license file.
+
+--------------------------------------------------------------------------------
+Full verbatim copies of every license for code compiled into the binary are in
+the LICENSES/ directory of this repository. For reference, the canonical texts:
+  MIT                  https://opensource.org/license/mit
+  BSD-3-Clause         https://opensource.org/license/bsd-3-clause
+
+The idea-credits above (clean-room, no code used) carry no redistribution
+obligation; their licenses are named only as courtesy attribution.
+
+If anything here is miscredited or mislabeled, please open an issue and we will
+correct it.
