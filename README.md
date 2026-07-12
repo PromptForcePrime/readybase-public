@@ -179,6 +179,11 @@ ReadyBase is a distillery. We study the best ideas in code intelligence and re-a
 | [GitHub CODEOWNERS](https://docs.github.com/articles/about-code-owners) | Mapping paths to the people and teams who own them | convention |
 | [SonarQube](https://github.com/SonarSource/sonarqube) | A composite quality gate over many independent signals | LGPL-3.0 |
 | [agents.md](https://agents.md) / Anthropic Claude Code | Project context files an agent reads (`AGENTS.md`, `CLAUDE.md`) | convention / platform |
+| [CodeGraph](https://github.com/colbymchenry/codegraph) | Returning a symbol's source inline from a pre-indexed graph, so an agent reads code in one call instead of many greps | MIT |
+| [Serena](https://github.com/oraios/serena) | A per-file symbol outline and reference navigation, so tools point at exact symbols rather than whole files | MIT |
+| [grepai](https://github.com/yoanbernabeu/grepai) | Framing codebase context as a token-budget optimizer, with a deterministic call-graph trace | MIT |
+| [Repomix](https://github.com/yamadashy/repomix) | Compressing files to signatures and bounding a packed context by token budget | MIT |
+| [SCIP](https://github.com/sourcegraph/scip) (Sourcegraph) | Human-readable canonical symbol IDs and per-document incremental indexing | Apache-2.0 |
 
 ### Components we actually package (real license obligations)
 
