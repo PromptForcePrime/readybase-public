@@ -1,8 +1,8 @@
 # ReadyBase
 
-**Give your AI coding assistant the context a senior engineer already has, and catch it when what it writes drifts from how your team builds.**
+**Give your AI coding assistant the context a senior engineer already has, catch it when what it writes drifts from how your team builds, and know how much autonomy the codebase has earned.**
 
-ReadyBase is a local-first command-line tool that studies your repository once and answers, on every turn, the two questions a good reviewer asks: can AI work here safely, and does this change belong? It maps which files are load-bearing, what changed last week, who owns what, and what breaks if you touch a given file. Then it guards the risky edits, scores how ready the codebase is for AI-assisted work, and watches for vibe drift: AI output that compiles and passes review but doesn't fit your conventions.
+ReadyBase is a local-first command-line tool that studies your repository once and answers, on every turn, the three questions a good reviewer asks: can AI work here safely, does this change belong, and how far can the agent be trusted to run on its own? It maps which files are load-bearing, what changed last week, who owns what, and what breaks if you touch a given file. Then it guards the risky edits, scores how ready the codebase is for AI-assisted work, watches for vibe drift (AI output that compiles and passes review but doesn't fit your conventions), and certifies how much unsupervised autonomy the repo can safely support.
 
 One CGO-free static binary. Everything it generates lands in your repo as plain files you can read, diff, and commit. Nothing leaves your machine.
 
@@ -19,16 +19,17 @@ Your AI assistant writes code faster than it can understand yours. Understanding
 * **Drift you only notice later.** Code that works but doesn't match your house style piles up one plausible PR at a time, until the codebase reads like a committee of strangers.
 * **You find out in production.** A context-free edit looks clean in the diff. The blast radius shows up when the pager goes off.
 
-The answer was never a smarter model. It is a foundation: map the codebase, guard the dangerous edits, and keep the AI coherent with how you build.
+The answer was never a smarter model. It is a foundation: map the codebase, guard the dangerous edits, keep the AI coherent with how you build, and certify how much autonomy it has earned.
 
-## Two axes
+## Three axes
 
-ReadyBase measures your codebase on two independent axes, both computed locally with no LLM calls.
+ReadyBase measures your codebase on three independent axes, all computed locally with no LLM calls.
 
 * **Readiness** answers whether AI can work here safely. A 0 to 100 score, weighted by risk rather than size, across nine signals, with a ranked list of what to fix next.
 * **Coherence** answers whether what the AI wrote belongs. ReadyBase learns your conventions from the code and git history and flags where new work has drifted from them.
+* **Loop Readiness** answers how far the agent can run unsupervised. A level from L0 to L3, derived from the dependency graph and AI-authorship provenance, that sets which files an agent may touch on its own and which still need a human.
 
-Readiness gets AI in the door. Coherence keeps it on your rails.
+Readiness gets AI in the door. Coherence keeps it on your rails. Loop Readiness decides how long a leash it has earned.
 
 ## Install
 
@@ -122,7 +123,20 @@ One number from 0 to 100, composed from nine signals, weighted by risk rather th
 | CI/CD maturity | 10 | Tests in CI, lint, deploy automation |
 | Structure | 5 | Package modularity, directory depth, cross-package coupling |
 
-`readybase score .` prints the full breakdown; `readybase diff .` compares it to the last scan. The coherence axis is tracked alongside it and surfaced in the console and reports.
+`readybase score .` prints the full breakdown; `readybase diff .` compares it to the last scan. The coherence and Loop Readiness axes are tracked alongside it and surfaced in the console and reports.
+
+## Loop Readiness levels
+
+Loop Readiness is a level, not an average, set by the weakest blocking gate so a single soft spot can't be hidden by strong signals elsewhere. Each level widens how much an agent may do before a human is required.
+
+| Level | Name | What an agent may do |
+|:-----:|------|----------------------|
+| L0 | Not ready | Every agent change needs human review |
+| L1 | Report only | Agents run and propose; all changes reviewed before merge |
+| L2 | Supervised | Agents auto-merge outside the `gate.yaml` denylist; load-bearing files still need approval |
+| L3 | Autonomous | Agents operate unsupervised; the circuit breaker and gate are the safety net |
+
+`readybase loop-audit .` reports the current level and the exact gates standing between it and the next. `readybase gate . --emit` writes the denylist those levels enforce.
 
 ## Connect it to your assistant
 
@@ -154,7 +168,7 @@ The action emits `score`, `grade`, `ai-readiness`, and `passed`, and writes a jo
 
 The category is full of tools that retrieve your code for an agent. ReadyBase is different where it counts.
 
-* **It judges, not just retrieves.** A readiness score, a coherence verdict, and a guard that gates the risky edit, not only a search index. It tells the AI whether a change belongs, not just what is in the file.
+* **It judges, not just retrieves.** A readiness score, a coherence verdict, a Loop Readiness level with a machine-derived agent-edit gate, and a guard that stops the risky edit, not only a search index. It tells the AI whether a change belongs and how far it can go, not just what is in the file.
 * **Network-free, provably.** No telemetry, no license phone-home during analysis, no upload. Your source never leaves the machine, a claim you can verify with `tcpdump` (below).
 * **Cost-first.** CLI-backed skills by default, so there is no always-on MCP server burning tokens on every session. Context is budgeted to the significant minority, not dumped wholesale.
 * **Deterministic and inspectable.** Same commit in, same result out. Everything generated is plain text you can diff, commit, or remove.
