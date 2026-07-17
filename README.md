@@ -62,6 +62,7 @@ readybase update --check  # just report whether a newer version exists
 readybase go .            # one command: scan, write guidance, index, set up
 readybase score .         # AI-readiness score (0 to 100) with the fix list
 readybase relate <file>   # what depends on this, what changed, what to test, before you edit
+readybase loop-audit .    # how ready the repo is for unsupervised agents (L0 to L3)
 readybase serve           # open the readiness console at localhost:8765
 readybase uninstall .     # remove everything ReadyBase generated (see also: hooks uninstall)
 ```
@@ -70,7 +71,7 @@ readybase uninstall .     # remove everything ReadyBase generated (see also: hoo
 
 ## What it does
 
-Four moves, one binary.
+Five moves, one binary.
 
 ### Map
 
@@ -93,6 +94,17 @@ ReadyBase learns your naming, structure, and error-handling conventions by conse
 ### Govern
 
 One readiness score with a ranked list of fixes ordered by points-per-hour, so the cheapest wins come first. Re-scan any time; `readybase diff .` proves the number moved. A manager-facing summary and portfolio ranking (`readybase portfolio <dir>`) roll many repos into one view.
+
+### Certify
+
+Before you let an agent edit unsupervised, ReadyBase tells you how much autonomy the repo can safely support. Loop Readiness scores the repo on a four-level scale (L0 to L3) derived from the real dependency graph and AI-authorship provenance, not a file-presence checklist. It emits a `gate.yaml` denylist of the load-bearing files an agent must get human review to touch, generated from blast radius and authorship rather than hand-authored. A circuit breaker watches for a stalled agent by error-signature similarity and halts the loop before it spins. Provenance attributes each change to human or AI, so AI code landing in a fragile single-owner file gets flagged, not merged blind.
+
+```bash
+readybase loop-audit .          # Loop Readiness level (L0 to L3) and what closes the gap to the next
+readybase gate . --emit         # derive gate.yaml: the agent-edit denylist, from real analysis
+readybase gate . --check        # validate an existing gate.yaml in CI (exit codes)
+readybase provenance <file>     # human vs AI authorship, flagged where AI code sits in a hotspot
+```
 
 ## The AI-readiness score
 
@@ -184,6 +196,12 @@ ReadyBase is a distillery. We study the best ideas in code intelligence and re-a
 | [grepai](https://github.com/yoanbernabeu/grepai) | Framing codebase context as a token-budget optimizer, with a deterministic call-graph trace | MIT |
 | [Repomix](https://github.com/yamadashy/repomix) | Compressing files to signatures and bounding a packed context by token budget | MIT |
 | [SCIP](https://github.com/sourcegraph/scip) (Sourcegraph) | Human-readable canonical symbol IDs and per-document incremental indexing | Apache-2.0 |
+| [VibeDrift](https://github.com/) (Code DNA) | Consensus dominant-pattern inference and MinHash/LSH near-duplicate detection to catch re-implemented logic | MIT |
+| [loop-engineering](https://github.com/) | The Loop Readiness vocabulary: readiness levels L0 to L3, `gate.yaml` maker/checker denylist, and the circuit breaker | convention |
+| [Factory.ai](https://factory.ai) (Agent Readiness) | A named maturity ladder over a readiness score, with deterministic gated unlock between tiers | proprietary |
+| Kenogami readiness | Setting the readiness level by the weakest blocking dimension rather than an average, so a single gap can't hide | convention |
+| [Memtrace](https://github.com/) | Fan-in-weighted impact scoring and significance budgeting: cover most of a graph's weight with the fewest files | MIT |
+| Repowise | Validating a readiness signal against a repo's own future bug-fix commits, and deterministic authorship provenance | research |
 
 ### Components we actually package (real license obligations)
 
