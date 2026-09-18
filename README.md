@@ -88,6 +88,14 @@ readybase explore "users get a 500 on password reset"   # where to start for a t
 
 ReadyBase writes the guidance your assistant reads (`CLAUDE.md`, `AGENTS.md`, guard rules) and installs optional git hooks. When your AI is about to edit a high-blast-radius file, the warning arrives at the right moment. No prompt engineering, fail-open by default, and the guidance travels with the repo.
 
+Guard's own verdicts stay deterministic: no LLM, no network, derived only from the scan and your rules. An optional layer on top asks a bring-your-own-key model (TypeSafe's Jev) for the judgment calls the graph alone cannot make, such as whether a file's content looks security-sensitive or how to rank a task's context by relevance. It is off unless you supply a key, and advisory only: it never blocks an edit or changes a verdict.
+
+```bash
+export TYPESAFE_API_KEY=your-key   # bring your own key; unset to turn it off again
+readybase setup .                  # wires the security-advisory hook in automatically
+readybase guard-advise <file>      # or run the check on demand, standalone
+```
+
 ### Watch
 
 ReadyBase learns your naming, structure, and error-handling conventions by consensus, not from a style guide nobody reads, and flags where AI-written code has strayed. Drift caught in the moment keeps the codebase feeling like one author.
@@ -150,6 +158,7 @@ ReadyBase computes context locally and hands it to whatever assistant you alread
 | Editors (LSP) | `readybase lsp` |
 | Dashboard | `readybase serve`, then open `http://localhost:8765` |
 | CI (GitHub Action) | gate a build on readiness in three lines (below) |
+| Jev advisory layer (opt-in, BYOK) | export `TYPESAFE_API_KEY`, then `readybase setup .` wires a security-advisory hook in; `readybase guard-advise <file>` and `readybase context <file> --rerank jev` also run standalone |
 
 Gate a pull request on AI-readiness:
 
@@ -187,7 +196,7 @@ sudo tcpdump -i any -n 'dst port 443' 2>/dev/null
 # ...now run `readybase scan .` in another terminal.
 ```
 
-The one deliberate exception is `readybase update`, which fetches a new release from GitHub only when you run it.
+The deliberate exceptions are `readybase update`, which fetches a new release from GitHub only when you run it, and the optional Jev advisory layer, which calls TypeSafe's API only when you supply your own key.
 
 ## Credits and attribution
 
