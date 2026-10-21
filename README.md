@@ -1,40 +1,19 @@
 # ReadyBase
 
-**Give your AI coding assistant the context a senior engineer already has, catch it when what it writes drifts from how your team builds, and know how much autonomy the codebase has earned.**
+**Give your AI coding assistant the context a senior engineer already has, catch the edits that don't belong, and know how far the agent can be trusted to run on its own.**
 
-ReadyBase is a local-first command-line tool that studies your repository once and answers, on every turn, the three questions a good reviewer asks: can AI work here safely, does this change belong, and how far can the agent be trusted to run on its own? It maps which files are load-bearing, what changed last week, who owns what, and what breaks if you touch a given file. Then it guards the risky edits, scores how ready the codebase is for AI-assisted work, watches for vibe drift (AI output that compiles and passes review but doesn't fit your conventions), and certifies how much unsupervised autonomy the repo can safely support.
+ReadyBase is a local-first command-line tool. It studies your repository once: which files are load-bearing, what changed recently, who owns what, and what breaks if you touch a file. It then hands that context to your assistant on every turn, guards the risky edits, and scores how ready the codebase is for AI-assisted work.
 
-One CGO-free static binary. Everything it generates lands in your repo as plain files you can read, diff, and commit. Nothing leaves your machine.
+One CGO-free static binary. What it writes lands in your repo as plain files you can read, diff, commit, or remove. Analysis runs on your machine and sends nothing anywhere.
 
 ReadyBase is a [Promptforce.ai](https://promptforce.ai) product. Promptforce.ai is a Day Two AI company.
 
-> **Early Access.** Free while we launch, no obligation. Ships with a 60-day Pro trial that activates on first run, offline. Get your install link at [promptforce.ai](https://promptforce.ai).
-
-## The problem
-
-Your AI assistant writes code faster than it can understand yours. Understanding the codebase is the first thing a new engineer does, and the one thing the agent skips.
-
-* **The confident stranger.** It edits like it read the whole repo. It didn't, and it can't see which file is load-bearing, so it changes the one with 40 dependents as casually as a typo fix.
-* **Tribal knowledge doesn't travel.** "Don't touch that without asking Maria" lives in Slack and in Maria's head. The agent never got the memo.
-* **Drift you only notice later.** Code that works but doesn't match your house style piles up one plausible PR at a time, until the codebase reads like a committee of strangers.
-* **You find out in production.** A context-free edit looks clean in the diff. The blast radius shows up when the pager goes off.
-
-The answer was never a smarter model. It is a foundation: map the codebase, guard the dangerous edits, keep the AI coherent with how you build, and certify how much autonomy it has earned.
-
-## Three axes
-
-ReadyBase measures your codebase on three independent axes, all computed locally with no LLM calls.
-
-* **Readiness** answers whether AI can work here safely. A 0 to 100 score, weighted by risk rather than size, across nine signals, with a ranked list of what to fix next.
-* **Coherence** answers whether what the AI wrote belongs. ReadyBase learns your conventions from the code and git history and flags where new work has drifted from them.
-* **Loop Readiness** answers how far the agent can run unsupervised. A level from L0 to L3, derived from the dependency graph and AI-authorship provenance, that sets which files an agent may touch on its own and which still need a human.
-
-Readiness gets AI in the door. Coherence keeps it on your rails. Loop Readiness decides how long a leash it has earned.
+> **Early Access.** Ships with a 45-day Pro trial that activates on first run, offline. Get your install link at [promptforce.ai](https://promptforce.ai).
 
 ## Install
 
 ```bash
-# macOS / Linux. Download the script, review it, then run it.
+# macOS / Linux: download the script, read it, then run it
 curl -fsSL https://promptforce.ai/rb-install.sh -o rb-install.sh
 less rb-install.sh
 bash rb-install.sh
@@ -45,207 +24,156 @@ bash rb-install.sh
 iwr https://promptforce.ai/rb-install.ps1 -OutFile rb-install.ps1; .\rb-install.ps1
 ```
 
-```bash
-# Go toolchain, any platform
-go install github.com/PromptForcePrime/readybase/cmd/readybase@latest
-```
-
-We don't do `curl | bash`. Download the script, read it, then decide. Already installed? Upgrade in place:
-
-```bash
-readybase update          # fetch the latest release, verify its checksum, replace in place
-readybase update --check  # just report whether a newer version exists
-```
+Releases are published here, and Windows binaries are signed. To upgrade in place, run `readybase update`. To only check for a newer version, run `readybase update --check`.
 
 ## Quick start
 
 ```bash
-readybase go .            # one command: scan, write guidance, index, set up
-readybase score .         # AI-readiness score (0 to 100) with the fix list
-readybase relate <file>   # what depends on this, what changed, what to test, before you edit
-readybase loop-audit .    # how ready the repo is for unsupervised agents (L0 to L3)
-readybase serve           # open the readiness console at localhost:8765
-readybase uninstall .     # remove everything ReadyBase generated (see also: hooks uninstall)
+readybase go .              # scan, index, write guidance, install hooks
+readybase score .           # readiness score (0 to 100) and what to fix first
+readybase relate <file>     # before an edit: dependents, co-change, tests, owners
+readybase symbol <name>     # where a name is defined, from the index
+readybase loop-audit .      # how far an agent may run unsupervised (L0 to L3)
+readybase uninstall .       # remove what ReadyBase wrote; your own edits are kept
 ```
-
-`readybase go .` is the canonical entry point. Everything it writes is plain text, committed to your repo, and reversible.
 
 ## What it does
 
-Five moves, one binary.
+All analysis is deterministic: no LLM calls, and the same commit always gives the same result.
 
-### Map
+**Map.** ReadyBase builds a structural graph of the repo:
 
-A structural graph of your repo: direct and transitive dependents (blast radius), co-change partners mined from git history, ownership and bus factor, complexity hotspots, and a per-file intelligence card. Importance is ranked by graph centrality, so a file every dependency path routes through counts as load-bearing even if few files import it directly. Raw dependent-counts miss that.
+- direct and transitive dependents (blast radius);
+- co-change partners mined from git history;
+- ownership and bus factor;
+- complexity hotspots.
 
-```bash
-readybase relate internal/storage/db.go   # blast radius, deps, and tests in one call
-readybase story  internal/storage/db.go   # recent commits, authors, churn, bus factor
-readybase explore "users get a 500 on password reset"   # where to start for a task or bug
-```
+Load-bearing files are ranked by graph centrality, not raw import counts. Four commands use the map:
 
-### Guard
+- `relate` gives a file's context in one call, with `--skeleton` for a symbol outline and paged sections for large files.
+- `symbol` finds a definition without guessing a directory.
+- `explore "<task, bug or stacktrace>"` narrows a task, bug or stacktrace to where to start.
+- `story <file>` tells a file's history.
 
-ReadyBase writes the guidance your assistant reads (`CLAUDE.md`, `AGENTS.md`, guard rules) and installs optional git hooks. When your AI is about to edit a high-blast-radius file, the warning arrives at the right moment. No prompt engineering, fail-open by default, and the guidance travels with the repo.
+**Guard.** ReadyBase writes the guidance your assistant reads (`CLAUDE.md`, `AGENTS.md`, guard rules) and installs hooks that warn at the moment an agent is about to edit a high-blast-radius file. Hooks fail open, so ReadyBase never breaks a session. Two commands manage clearance:
 
-Guard's own verdicts stay deterministic: no LLM, no network, derived only from the scan and your rules. An optional layer on top asks a bring-your-own-key model (TypeSafe's Jev) for the judgment calls the graph alone cannot make, such as whether a file's content looks security-sensitive or how to rank a task's context by relevance. It is off unless you supply a key, and advisory only: it never blocks an edit or changes a verdict.
+- `readybase check <file>` says whether an agent edit is cleared.
+- `readybase approve <file> --ttl 2h` clears one file for a bounded time.
 
-```bash
-export TYPESAFE_API_KEY=your-key   # bring your own key; unset to turn it off again
-readybase setup .                  # wires the security-advisory hook in automatically
-readybase guard-advise <file>      # or run the check on demand, standalone
-```
+**Watch.** ReadyBase learns your naming, structure and error-handling conventions by consensus, then flags code that has drifted from them (`readybase drift .`). Before an edit, `readybase suggestion <file>` lists:
 
-### Watch
+- the conventions that apply;
+- code that already exists and could be reused;
+- the blast radius.
 
-ReadyBase learns your naming, structure, and error-handling conventions by consensus, not from a style guide nobody reads, and flags where AI-written code has strayed. Drift caught in the moment keeps the codebase feeling like one author.
+**Score.** One readiness number with a fix list ordered by points per hour. `readybase portfolio <dir>` ranks many repos.
 
-### Govern
+**Certify.** Loop Readiness sets how much autonomy the repo has earned, from L0 to L3, and `readybase gate . --emit` writes `gate.yaml`. That file is the list of files an agent must not touch without human review. It is derived from the dependency graph and from authorship provenance (whether a person or an AI wrote the code). A circuit breaker stops an agent that keeps repeating the same failure.
 
-One readiness score with a ranked list of fixes ordered by points-per-hour, so the cheapest wins come first. Re-scan any time; `readybase diff .` proves the number moved. A manager-facing summary and portfolio ranking (`readybase portfolio <dir>`) roll many repos into one view.
+**Review gate.** `readybase review-gate enable` posts a `readybase/agent-review` status on your open pull requests. The status fails while any file an agent changed in the PR is load-bearing and nobody has marked it reviewed, and it passes once someone has. When ReadyBase cannot decide, the status is left pending, never passed. It is off by default and set per repo.
 
-### Certify
+**Turn record.** Hooks record what each agent turn changed, as file and commit counts and never file contents. ReadyBase then checks whether those changes were still there 7, 30, 90 and 180 days later. `readybase events` reports this record, and `readybase recording off` pauses it.
 
-Before you let an agent edit unsupervised, ReadyBase tells you how much autonomy the repo can safely support. Loop Readiness scores the repo on a four-level scale (L0 to L3) derived from the real dependency graph and AI-authorship provenance, not a file-presence checklist. It emits a `gate.yaml` denylist of the load-bearing files an agent must get human review to touch, generated from blast radius and authorship rather than hand-authored. A circuit breaker watches for a stalled agent by error-signature similarity and halts the loop before it spins. Provenance attributes each change to human or AI, so AI code landing in a fragile single-owner file gets flagged, not merged blind.
-
-```bash
-readybase loop-audit .          # Loop Readiness level (L0 to L3) and what closes the gap to the next
-readybase gate . --emit         # derive gate.yaml: the agent-edit denylist, from real analysis
-readybase gate . --check        # validate an existing gate.yaml in CI (exit codes)
-readybase provenance <file>     # human vs AI authorship, flagged where AI code sits in a hotspot
-```
-
-## The AI-readiness score
-
-One number from 0 to 100, composed from nine signals, weighted by risk rather than size so a large well-owned repo isn't punished and a fragile one can't hide. It is computed from your repo on disk, and every signal is inspectable.
+## The readiness score
 
 | Signal | Weight | What it measures |
-|--------|:------:|-----------------|
+|--------|:------:|------------------|
 | Test coverage | 17 | Share of code reached by tests |
-| Test quality | 3 | Assertion density, real probes vs smoke |
-| Documentation | 15 | README freshness, docs, context files |
-| Dependency health | 15 | Outdated dependencies, known advisories |
-| Bus factor | 15 | How many people actually know each area |
+| Bus factor | 15 | How many people know each area |
+| Documentation | 14 | README freshness, docs, context files |
+| Dependency health | 14 | Outdated dependencies, known advisories |
 | Build complexity | 10 | Env vars, containerization, reproducibility |
 | Code complexity | 10 | File and function size, nesting |
 | CI/CD maturity | 10 | Tests in CI, lint, deploy automation |
-| Structure | 5 | Package modularity, directory depth, cross-package coupling |
+| Structure | 5 | Modularity, depth, cross-package coupling |
+| Security | 5 | Credential-shaped strings, a disclosure policy |
 
-`readybase score .` prints the full breakdown; `readybase diff .` compares it to the last scan. The coherence and Loop Readiness axes are tracked alongside it and surfaced in the console and reports.
+`readybase score .` prints the breakdown and `readybase diff .` compares it with the last scan.
 
-## Loop Readiness levels
+Loop Readiness is a level, set by the weakest blocking gate so that one gap cannot be averaged away:
 
-Loop Readiness is a level, not an average, set by the weakest blocking gate so a single soft spot can't be hidden by strong signals elsewhere. Each level widens how much an agent may do before a human is required.
-
-| Level | Name | What an agent may do |
-|:-----:|------|----------------------|
-| L0 | Not ready | Every agent change needs human review |
-| L1 | Report only | Agents run and propose; all changes reviewed before merge |
-| L2 | Supervised | Agents auto-merge outside the `gate.yaml` denylist; load-bearing files still need approval |
-| L3 | Autonomous | Agents operate unsupervised; the circuit breaker and gate are the safety net |
-
-`readybase loop-audit .` reports the current level and the exact gates standing between it and the next. `readybase gate . --emit` writes the denylist those levels enforce.
+- **L0, not ready:** every agent change needs review.
+- **L1, report only:** agents propose and every change is reviewed.
+- **L2, supervised:** agents may merge outside `gate.yaml`.
+- **L3, autonomous:** the gate and the circuit breaker are the safety net.
 
 ## Connect it to your assistant
 
-ReadyBase computes context locally and hands it to whatever assistant you already use.
+| Surface | How |
+|---------|-----|
+| Skills (default) | `readybase go .` installs CLI-backed skills for `explore`, `relate` and `story`. No always-on server, so there is no idle token cost |
+| MCP (opt-in) | `readybase setup . --profile mcp` registers the tool set (explore, relate, story, score, ownership and more) |
+| Git hooks | `readybase hooks install`: blast-radius warning on commit, readiness gate on push |
+| Editors | `readybase lsp` |
+| Prefex | `readybase serve` answers Prefex's versioned API on port 8018; `readybase serve --ui` adds the local dashboard |
+| Exports | `readybase export` writes a scorecard for Backstage, Port.io or Cortex, or SARIF for GitHub code scanning |
 
-| Surface | How to connect |
-|---------|----------------|
-| CLI-backed skills (default) | `readybase go .` installs lightweight skills so `explore`, `relate`, and `story` work with no always-on MCP server, so there is zero idle token cost |
-| MCP (opt-in) | `readybase mcp` registers the tools: `readybase_explore` to start, `readybase_relate` for blast radius, deps, and tests, `readybase_story` for history and authors, plus the full set including `score`, `coverage`, `convention`, `who_owns`, `ghost`, and `succession` |
-| Git hooks | `readybase hooks install` adds a blast-radius warning on commit, a readiness gate on push, and session context on start |
-| Editors (LSP) | `readybase lsp` |
-| Dashboard | `readybase serve`, then open `http://localhost:8765` |
-| CI (GitHub Action) | gate a build on readiness in three lines (below) |
-| Jev advisory layer (opt-in, BYOK) | export `TYPESAFE_API_KEY`, then `readybase setup .` wires a security-advisory hook in; `readybase guard-advise <file>` and `readybase context <file> --rerank jev` also run standalone |
+## Optional judgment layer: Laya or Jev
 
-Gate a pull request on AI-readiness:
+Some calls need a judgment that the graph alone cannot make, such as:
 
-```yaml
-# .github/workflows/readiness.yml
-- uses: PromptForcePrime/readybase@v1
-  with:
-    path: .
-    min-score: 50
-    fail-under: true
-```
+- whether a file looks security-sensitive;
+- how to rank context for a task;
+- what kind of request started a recorded turn.
 
-The action emits `score`, `grade`, `ai-readiness`, and `passed`, and writes a job summary. Add `sarif: true` (with `permissions: security-events: write`) to surface findings in the Security tab and as inline PR annotations. `readybase export` also emits scorecards for Backstage, Port.io, and Cortex.
+For these, ReadyBase can ask a model. Its answers are advisory only: they never block an edit or change a verdict. You have two options:
 
-## Why ReadyBase
+- **Laya, on your machine.** `readybase sidecar install` (or `readybase go . --with-laya`) installs [Laya](https://huggingface.co/convaiinnovations/laya) in a local Python environment and runs it as a sidecar on localhost. Questions and prompt text stay on the machine. `readybase sidecar status` shows what it has answered.
+- **Jev, hosted, bring your own key.** Export `TYPESAFE_API_KEY` to use TypeSafe's Jev. What it receives depends on the call:
+  - the security advisory sends the first 6,000 characters of the file it checks;
+  - context ranking sends the task and file names;
+  - turn labels send a turn's structure, never prompt text.
 
-The category is full of tools that retrieve your code for an agent. ReadyBase is different where it counts.
+  Use Laya if code must not leave the machine.
 
-* **It judges, not just retrieves.** A readiness score, a coherence verdict, a Loop Readiness level with a machine-derived agent-edit gate, and a guard that stops the risky edit, not only a search index. It tells the AI whether a change belongs and how far it can go, not just what is in the file.
-* **Network-free, provably.** No telemetry, no license phone-home during analysis, no upload. Your source never leaves the machine, a claim you can verify with `tcpdump` (below).
-* **Cost-first.** CLI-backed skills by default, so there is no always-on MCP server burning tokens on every session. Context is budgeted to the significant minority, not dumped wholesale.
-* **Deterministic and inspectable.** Same commit in, same result out. Everything generated is plain text you can diff, commit, or remove.
+With neither installed, the layer is off.
 
-## Principles
+## Privacy
 
-1. **Local-first.** All analysis runs on the repo on disk. ReadyBase reads your files; it does not send them anywhere. See [`PRIVACY.md`](PRIVACY.md).
-2. **Single binary.** One CGO-free static executable. No runtime, no background service phoning home, no sidecar to supervise.
-3. **Inspectable output.** Everything ReadyBase generates lands in your repo as plain text you can read, diff, and commit, or remove with `readybase uninstall`.
+Analysis reads the repo on disk and sends nothing anywhere. License checks are offline. ReadyBase makes outbound calls only in these cases, each one something you turn on:
 
-Verify it yourself:
+| Call | When |
+|------|------|
+| GitHub releases | You run `readybase update` |
+| GitHub API (commit statuses) | You enable `review-gate`, using your `gh` login or `READYBASE_GITHUB_TOKEN` |
+| TypeSafe API | You set `TYPESAFE_API_KEY` (the security advisory includes the checked file's content) |
+| Your webhook URL | You configure one |
 
-```bash
-# ReadyBase makes no outbound calls during a scan. This should print nothing.
-sudo tcpdump -i any -n 'dst port 443' 2>/dev/null
-# ...now run `readybase scan .` in another terminal.
-```
+Laya and Prefex run on localhost. You can check the no-network claim yourself: run `sudo tcpdump -i any -n 'dst port 443'` while `readybase scan .` runs in another terminal, and it should print nothing. See [`PRIVACY.md`](PRIVACY.md).
 
-The deliberate exceptions are `readybase update`, which fetches a new release from GitHub only when you run it, and the optional Jev advisory layer, which calls TypeSafe's API only when you supply your own key.
+## Credits
 
-## Credits and attribution
+ReadyBase re-authors good ideas natively in Go. **No source code from the projects below is copied into ReadyBase**, so these are courtesy credits, not license obligations, and their licenses do not apply to ReadyBase.
 
-ReadyBase is a distillery. We study the best ideas in code intelligence and re-author the algorithm natively in Go, inside our own principles. Copyright protects code, not ideas, so for the projects and research below, no source code is copied into ReadyBase. These are courtesy credits, not license obligations. We name them because the ideas are theirs and the credit should be too.
+| Source | Idea |
+|--------|------|
+| [dependency-cruiser](https://github.com/sverweij/dependency-cruiser), [madge](https://github.com/pahen/madge) | Dependency graphs with rules and cycle detection |
+| CodeScene / *Your Code as a Crime Scene* (Adam Tornhill) | Hotspots, change coupling, knowledge maps |
+| Truck Factor research (Avelino, Passos, Hora, Valente, 2016) | Bus factor from authorship |
+| Louvain (Blondel et al.), betweenness (Brandes) | Modules and load-bearing files in a graph |
+| [GitHub CODEOWNERS](https://docs.github.com/articles/about-code-owners) | Mapping paths to owners |
+| [SonarQube](https://github.com/SonarSource/sonarqube) | A composite quality gate over many signals |
+| [agents.md](https://agents.md) / Claude Code | Context files an agent reads |
+| [CodeGraph](https://github.com/colbymchenry/codegraph) | A symbol's source returned inline from a pre-built index |
+| [Serena](https://github.com/oraios/serena) | Symbol outlines and reference navigation |
+| [grepai](https://github.com/yoanbernabeu/grepai) | Context as a token-budget problem |
+| [Repomix](https://github.com/yamadashy/repomix) | Signature compression under a token budget |
+| [SCIP](https://github.com/sourcegraph/scip) | Canonical symbol IDs, per-document indexing |
+| [VibeDrift](https://github.com/VibeDrift/VibeDrift) | Consensus pattern inference, near-duplicate detection |
+| [loop-engineering](https://github.com/cobusgreyling/loop-engineering) | L0 to L3 levels, `gate.yaml`, the circuit breaker |
+| [Factory.ai](https://factory.ai) Agent Readiness | A gated maturity ladder over a score |
+| Kenogami readiness | Level set by the weakest dimension |
+| [Memtrace](https://github.com/syncable-dev/memtrace-public) | Fan-in-weighted impact and significance budgeting |
+| Repowise | Validating a signal against later bug-fix commits |
 
-### Ideas distilled into native Go (clean-room, no code used)
+**Compiled into the binary.** The binary includes 11 Go modules under MIT or BSD-3-Clause, among them [gotreesitter](https://github.com/odvcencio/gotreesitter) for parsing and [modernc.org/sqlite](https://gitlab.com/cznic/sqlite) for storage. They are listed with versions in [`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md), with the full license texts in [`LICENSES/`](LICENSES/) and a summary in [`NOTICE`](NOTICE).
 
-| Source | The idea we learned from | License |
-|--------|--------------------------|---------|
-| [dependency-cruiser](https://github.com/sverweij/dependency-cruiser) | A static dependency graph you can write rules against | MIT |
-| [madge](https://github.com/pahen/madge) | Module graph with circular-dependency detection | MIT |
-| CodeScene / *Your Code as a Crime Scene* (Adam Tornhill) | Behavioral code analysis: hotspots, change coupling, knowledge maps | proprietary (book) |
-| Truck Factor research (Avelino, Passos, Hora, Valente, 2016) | Estimating bus / truck factor from version-control authorship | research |
-| Community detection (Blondel et al., *Louvain*) and centrality (Brandes, *betweenness*) | Finding architectural modules and load-bearing files in a graph | research |
-| [GitHub CODEOWNERS](https://docs.github.com/articles/about-code-owners) | Mapping paths to the people and teams who own them | convention |
-| [SonarQube](https://github.com/SonarSource/sonarqube) | A composite quality gate over many independent signals | LGPL-3.0 |
-| [agents.md](https://agents.md) / Anthropic Claude Code | Project context files an agent reads (`AGENTS.md`, `CLAUDE.md`) | convention / platform |
-| [CodeGraph](https://github.com/colbymchenry/codegraph) | Returning a symbol's source inline from a pre-indexed graph, so an agent reads code in one call instead of many greps | MIT |
-| [Serena](https://github.com/oraios/serena) | A per-file symbol outline and reference navigation, so tools point at exact symbols rather than whole files | MIT |
-| [grepai](https://github.com/yoanbernabeu/grepai) | Framing codebase context as a token-budget optimizer, with a deterministic call-graph trace | MIT |
-| [Repomix](https://github.com/yamadashy/repomix) | Compressing files to signatures and bounding a packed context by token budget | MIT |
-| [SCIP](https://github.com/sourcegraph/scip) (Sourcegraph) | Human-readable canonical symbol IDs and per-document incremental indexing | Apache-2.0 |
-| [VibeDrift](https://github.com/) (Code DNA) | Consensus dominant-pattern inference and MinHash/LSH near-duplicate detection to catch re-implemented logic | MIT |
-| [loop-engineering](https://github.com/) | The Loop Readiness vocabulary: readiness levels L0 to L3, `gate.yaml` maker/checker denylist, and the circuit breaker | convention |
-| [Factory.ai](https://factory.ai) (Agent Readiness) | A named maturity ladder over a readiness score, with deterministic gated unlock between tiers | proprietary |
-| Kenogami readiness | Setting the readiness level by the weakest blocking dimension rather than an average, so a single gap can't hide | convention |
-| [Memtrace](https://github.com/) | Fan-in-weighted impact scoring and significance budgeting: cover most of a graph's weight with the fewest files | MIT |
-| Repowise | Validating a readiness signal against a repo's own future bug-fix commits, and deterministic authorship provenance | research |
+**Installed only on request, not bundled.** `readybase sidecar install` fetches [Laya](https://huggingface.co/convaiinnovations/laya) (Apache-2.0) and Flask (BSD-3-Clause) from PyPI into `~/.readybase/laya-venv`.
 
-### Components we actually package (real license obligations)
+If we have miscredited anything, please open an issue.
 
-ReadyBase links a small set of third-party Go modules into the released binary. The structural parser is built on the tree-sitter idea via a pure-Go binding; the rest are storage, formatting, and platform glue.
+## License and Anthropic
 
-| Component | Role | License |
-|-----------|------|---------|
-| [gotreesitter](https://github.com/odvcencio/gotreesitter) | Pure-Go incremental parsing to AST (implements the [tree-sitter](https://github.com/tree-sitter/tree-sitter) idea) | MIT |
-| [modernc.org/sqlite](https://gitlab.com/cznic/sqlite) | Embedded database for scans, history, and the console | BSD-3-Clause |
-| [google/uuid](https://github.com/google/uuid) | Identifiers for scans and records | BSD-3-Clause |
+ReadyBase is distributed as a binary, in Early Access, as-is and with no warranty. For Pro and Team plans, contact [[PII_EMAIL_2]](mailto:[PII_EMAIL_2]).
 
-The complete set of third-party Go modules compiled into the binary is in [`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md), with the full verbatim text of every license under [`LICENSES/`](LICENSES/); see also [`NOTICE`](NOTICE).
-
-If we have miscredited or mislabeled anything, please open an issue and we will correct it.
-
-## License and terms
-
-ReadyBase is distributed as a binary, in Early Access, provided as-is with no warranty. Early Access is free while we launch; Pro and Team plans are available on request at [contact@daytwoai.com](mailto:contact@daytwoai.com).
-
-Third-party components compiled into the binary retain their own licenses, recorded in [`NOTICE`](NOTICE) and [`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md).
-
-## A note on Anthropic
-
-Day Two AI is an Anthropic partner. **ReadyBase is built independently, with no Anthropic participation, funding, or endorsement.** It is not an Anthropic product and is not affiliated with Anthropic. "Claude" and "Anthropic" are trademarks of Anthropic; they are used here only to describe interoperability. ReadyBase analyzes your code locally and hands context to whatever assistant you already use; it never sends your source anywhere.
+Day Two AI is an Anthropic partner. **ReadyBase is built independently, with no Anthropic participation, funding or endorsement.** "Claude" and "Anthropic" are trademarks of Anthropic, used here only to describe interoperability.

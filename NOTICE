@@ -6,8 +6,8 @@ warranty. "Claude" and "Anthropic" are trademarks of Anthropic, used only to
 describe interoperability. Day Two AI is an Anthropic partner; ReadyBase is
 built independently, with no Anthropic participation or endorsement.
 
-ReadyBase is local-first. It reads the repository on disk and sends no source
-code anywhere.
+ReadyBase is local-first. Analysis reads the repository on disk and sends
+nothing anywhere; see PRIVACY.md for the opt-in calls.
 
 ================================================================================
 Ideas distilled into native Go (clean-room, NO source code used)
@@ -15,22 +15,18 @@ Ideas distilled into native Go (clean-room, NO source code used)
 
 The following projects and research inspired ideas that were re-authored from
 scratch in Go. No source code from them is included in or distributed with
-ReadyBase. These are courtesy credits, not license obligations:
+ReadyBase, so their licenses do not apply to ReadyBase. These are courtesy
+credits only; the full list is in README.md:
 
-  - dependency-cruiser   (MIT)          https://github.com/sverweij/dependency-cruiser
-        static dependency graph with rules written against it
-  - madge                (MIT)          https://github.com/pahen/madge
-        module dependency graph and circular-dependency detection
-  - CodeScene / "Your Code as a Crime Scene", Adam Tornhill   (proprietary, book)
-        behavioral code analysis: hotspots, change coupling, knowledge maps
-  - Truck Factor research, Avelino/Passos/Hora/Valente, 2016  (research)
-        estimating bus / truck factor from version-control authorship
-  - GitHub CODEOWNERS    (convention)   https://docs.github.com/articles/about-code-owners
-        mapping paths to the people and teams who own them
-  - SonarQube            (LGPL-3.0)     https://github.com/SonarSource/sonarqube
-        a composite quality gate over many independent signals
-  - agents.md / Claude Code  (convention / platform)  https://agents.md
-        project context files an agent reads (AGENTS.md, CLAUDE.md)
+  - dependency-cruiser, madge: dependency graphs, rules, cycle detection
+  - CodeScene / "Your Code as a Crime Scene", Adam Tornhill: hotspots, change coupling
+  - Truck Factor research, Avelino/Passos/Hora/Valente, 2016: bus factor
+  - GitHub CODEOWNERS: mapping paths to owners
+  - SonarQube: a composite quality gate over many signals
+  - agents.md / Claude Code: context files an agent reads
+  - CodeGraph, Serena, grepai, Repomix, SCIP: symbol navigation and token budgets
+  - VibeDrift, loop-engineering, Memtrace, Factory.ai, Kenogami, Repowise:
+        drift detection, loop readiness levels, impact scoring, signal validation
 
 ================================================================================
 Third-party Go libraries compiled into the readybase binary
@@ -56,7 +52,17 @@ the LICENSES/ directory of this repository. For reference, the canonical texts:
   BSD-3-Clause         https://opensource.org/license/bsd-3-clause
 
 The idea-credits above (clean-room, no code used) carry no redistribution
-obligation; their licenses are named only as courtesy attribution.
+obligation.
+
+================================================================================
+Installed only on request, not bundled
+================================================================================
+
+`readybase sidecar install` (or `--with-laya`) fetches these from PyPI into
+~/.readybase/laya-venv. They are not part of the readybase binary:
+
+  laya   (Apache-2.0)    https://huggingface.co/convaiinnovations/laya
+  flask  (BSD-3-Clause)  https://flask.palletsprojects.com
 
 If anything here is miscredited or mislabeled, please open an issue and we will
 correct it.

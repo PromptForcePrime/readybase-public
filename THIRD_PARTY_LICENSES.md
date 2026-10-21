@@ -15,15 +15,15 @@ binary. The full text of each is reproduced verbatim under `LICENSES/`.
 |--------|---------|---------|-----------|
 | `github.com/dustin/go-humanize` | v1.0.1 | MIT | [LICENSES/github.com_dustin_go-humanize.txt](LICENSES/github.com_dustin_go-humanize.txt) |
 | `github.com/google/uuid` | v1.6.0 | BSD-3-Clause | [LICENSES/github.com_google_uuid.txt](LICENSES/github.com_google_uuid.txt) |
-| `github.com/mattn/go-isatty` | v0.0.20 | MIT | [LICENSES/github.com_mattn_go-isatty.txt](LICENSES/github.com_mattn_go-isatty.txt) |
+| `github.com/mattn/go-isatty` | v0.0.22 | MIT | [LICENSES/github.com_mattn_go-isatty.txt](LICENSES/github.com_mattn_go-isatty.txt) |
 | `github.com/ncruces/go-strftime` | v1.0.0 | MIT | [LICENSES/github.com_ncruces_go-strftime.txt](LICENSES/github.com_ncruces_go-strftime.txt) |
-| `github.com/odvcencio/gotreesitter` | v0.20.2 | MIT | [LICENSES/github.com_odvcencio_gotreesitter.txt](LICENSES/github.com_odvcencio_gotreesitter.txt) |
+| `github.com/odvcencio/gotreesitter` | v0.20.9 | MIT | [LICENSES/github.com_odvcencio_gotreesitter.txt](LICENSES/github.com_odvcencio_gotreesitter.txt) |
 | `github.com/remyoudompheng/bigfft` | v0.0.0-20230129092748-24d4a6f8daec | BSD-3-Clause | [LICENSES/github.com_remyoudompheng_bigfft.txt](LICENSES/github.com_remyoudompheng_bigfft.txt) |
 | `golang.org/x/sys` | v0.46.0 | BSD-3-Clause | [LICENSES/golang.org_x_sys.txt](LICENSES/golang.org_x_sys.txt) (+ [PATENTS](LICENSES/golang.org_x_sys.PATENTS.txt)) |
-| `modernc.org/libc` | v1.70.0 | BSD-3-Clause | [LICENSES/modernc.org_libc.txt](LICENSES/modernc.org_libc.txt) (+ [3rd-party C](LICENSES/modernc.org_libc.LICENSE-3RD-PARTY.md.txt)) |
+| `modernc.org/libc` | v1.73.5 | BSD-3-Clause | [LICENSES/modernc.org_libc.txt](LICENSES/modernc.org_libc.txt) (+ [3rd-party C](LICENSES/modernc.org_libc.LICENSE-3RD-PARTY.md.txt)) |
 | `modernc.org/mathutil` | v1.7.1 | BSD-3-Clause | [LICENSES/modernc.org_mathutil.txt](LICENSES/modernc.org_mathutil.txt) |
 | `modernc.org/memory` | v1.11.0 | BSD-3-Clause | [LICENSES/modernc.org_memory.txt](LICENSES/modernc.org_memory.txt) (+ [Go](LICENSES/modernc.org_memory.LICENSE-GO.txt), [mmap-go](LICENSES/modernc.org_memory.LICENSE-MMAP-GO.txt), [logo](LICENSES/modernc.org_memory.LICENSE-LOGO.txt)) |
-| `modernc.org/sqlite` | v1.48.2 | BSD-3-Clause | [LICENSES/modernc.org_sqlite.txt](LICENSES/modernc.org_sqlite.txt) |
+| `modernc.org/sqlite` | v1.53.0 | BSD-3-Clause | [LICENSES/modernc.org_sqlite.txt](LICENSES/modernc.org_sqlite.txt) |
 
 _11 third-party modules._
 

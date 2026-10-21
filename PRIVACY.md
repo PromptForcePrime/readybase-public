@@ -20,21 +20,27 @@ uploaded. No server sees your source. No third party is in the loop.
 | Git history and authorship | Never |
 | Readiness scores and reports | Never (stored in your repo, under `.readybase/`) |
 | Dependency graph and blast radius | Never |
-| License validation | Anonymous license check only |
+| License validation | Never (checked offline) |
 
 ## Common questions
 
 **Does ReadyBase send my code to an AI model?**
-No. ReadyBase computes context locally and hands it to whatever AI assistant *you* already use. Your
-relationship with that assistant is unchanged; ReadyBase just makes it smarter about your repo.
+Not by default. ReadyBase computes context locally and hands it to whatever AI assistant *you* already
+use. The optional judgment layer can run on your machine (Laya, `readybase sidecar install`) or on
+TypeSafe's hosted Jev if you set `TYPESAFE_API_KEY`. With Jev, the security advisory sends the first
+6,000 characters of the file it checks; use Laya if code must not leave the machine.
+
+**What does ReadyBase ever send over the network?**
+Only what you turn on: `readybase update` (GitHub releases), `readybase review-gate` (commit statuses
+via the GitHub API), Jev (with your key), and webhooks you configure. Laya and the Prefex API run on
+localhost.
 
 **What gets written to my repo?**
 Guidance files (`CLAUDE.md`, `AGENTS.md`), guard rules, and a local intelligence index, all plain text,
 all yours. Remove them anytime with `readybase uninstall`.
 
 **Can I run it fully offline?**
-Yes. The analysis needs no network. The only outbound call is an anonymous license check, and the core
-scanning works without it.
+Yes. Analysis and license checks need no network.
 
 **Is it safe for proprietary or regulated codebases?**
 That is exactly who local-first is for. Nothing about your code, structure, or contributors is
